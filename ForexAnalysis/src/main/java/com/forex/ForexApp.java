@@ -21,6 +21,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.forex.dao.ForexDao;
 import com.forex.model.ForexData;
 
 public class ForexApp {
@@ -32,8 +33,10 @@ public class ForexApp {
 	private static final String DOMAIN = "https://stream-fxpractice.oanda.com";;
 	private static final String TIME_FORMAT="yyyy-MM-dd'T'HH:mm:ss.SSSSSS";
 	private static Logger logger = LoggerFactory.getLogger(ForexApp.class);
+	private static ForexDao dao=new ForexDao();
 	
 	public static void main(String[] args) {
+		System.out.println("ASDASD");
 		read();
 		
 	}
@@ -70,6 +73,7 @@ public class ForexApp {
 					double ask = Double.parseDouble(tick.get("ask")
 							.toString());
 					_result=new ForexData(instrument,bid,ask,time);
+					dao.storeData(_result);
 					System.out.println(_result);
 				}
 			} else {
@@ -114,6 +118,9 @@ public class ForexApp {
 
 		} catch (IOException e) {
 			logger.error("EXCEPTION when reading service");
+		}
+		finally{
+			dao.close();
 		}
 
 	}

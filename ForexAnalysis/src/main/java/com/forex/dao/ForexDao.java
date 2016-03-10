@@ -1,6 +1,7 @@
 package com.forex.dao;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.conf.Configuration;
@@ -12,6 +13,7 @@ import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -28,18 +30,38 @@ public class ForexDao {
 	
 	private static Logger logger=LoggerFactory.getLogger(ForexDao.class);
 	private HTable table;
-	public Put mkPut(ForexData data){
-		
-		
+	
+	private Put mkPut(ForexData data){
 		Put put=new Put(Bytes.toBytes(data.getInstrument()+"_"+data.getTimeAsDate()));
 		put.add(COLUMN_FAMILY, COLUMN_NAME_BUY, data.getTimeStamp(), Bytes.toBytes(data.getBuyPrice()));
 		put.add(COLUMN_FAMILY,COLUMN_NAME_SELL,data.getTimeStamp(),Bytes.toBytes(data.getSellPrice()));
 		return put;
 	}
 	
-	public Get mkGet(ForexData data){
-		Get get=null;
+	public void storeData(ForexData data){
+		Put put=mkPut(data);
+		try {
+			table.put(put);
+			table.flushCommits();
+		} catch (RetriesExhaustedWithDetailsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedIOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+	}
+	
+	private Get mkGet(ForexData data){
+		Get get=new Get(Bytes.toBytes(data.getInstrument()+"_"+data.getTimeAsDate()));
+		try {
+			get.addFamily(COLUMN_FAMILY);
+			get.setMaxVersions(Integer.MAX_VALUE);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return get;
 	}
 	
@@ -47,9 +69,7 @@ public class ForexDao {
 		Configuration conf=HBaseConfiguration.create();
 		
 		try {
-			table=new HTable(conf,TABLE_NAME);
-					
-		
+			table=new HTable(conf,TABLE_NAME);	
 		} catch (IOException e) {
 			logger.error("Error connection to table = "+e.getMessage());
 		}
