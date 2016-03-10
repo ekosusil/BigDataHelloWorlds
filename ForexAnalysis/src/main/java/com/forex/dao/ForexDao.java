@@ -2,9 +2,13 @@ package com.forex.dao;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
@@ -38,16 +42,45 @@ public class ForexDao {
 		return put;
 	}
 	
+	
+	public List<ForexData> scanAll(String instrument){
+		List<ForexData> data=new LinkedList<ForexData>();
+		Scan scan=new Scan(Bytes.toBytes(instrument));
+		scan=scan.setMaxVersions(Integer.MAX_VALUE);
+		try {
+			ResultScanner rs=table.getScanner(scan);
+			//TODO convert from Result to ForexData
+			for(Result result:rs){
+				String strRes="";
+				strRes+=Bytes.toString(result.getRow());
+				for (Cell kv : result.rawCells()) {
+					strRes+=" Family - "
+							+ Bytes.toString(CellUtil.cloneFamily(kv));
+					strRes+=" : Qualifier - "
+							+ Bytes.toString(CellUtil.cloneQualifier(kv));
+					strRes+=" : Value: "
+							+ Bytes.toDouble(CellUtil.cloneValue(kv)) + " ";
+					System.out.println("=="+strRes);
+
+				}
+			}
+		} catch (IOException e) {
+			logger.error("Error during scanning "+e.getMessage());
+			e.printStackTrace();
+		}
+		return data;
+		
+	}
+	
 	public void storeData(ForexData data){
 		Put put=mkPut(data);
 		try {
 			table.put(put);
-			table.flushCommits();
-		} catch (RetriesExhaustedWithDetailsException e) {
-			// TODO Auto-generated catch block
+		} catch (RetriesExhaustedWithDetailsException e) {			
+			logger.error("Exception on storing data "+e.getMessage());
 			e.printStackTrace();
 		} catch (InterruptedIOException e) {
-			// TODO Auto-generated catch block
+			logger.error("Exception on storing data "+e.getMessage());
 			e.printStackTrace();
 		}
 		
@@ -59,7 +92,7 @@ public class ForexDao {
 			get.addFamily(COLUMN_FAMILY);
 			get.setMaxVersions(Integer.MAX_VALUE);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			logger.error("Exception on querying data "+e.getMessage());
 			e.printStackTrace();
 		}
 		return get;

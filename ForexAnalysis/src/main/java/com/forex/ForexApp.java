@@ -23,21 +23,24 @@ import org.slf4j.LoggerFactory;
 
 import com.forex.dao.ForexDao;
 import com.forex.model.ForexData;
+import com.forex.services.ForexService;
+import com.forex.servicesImpl.ForexServiceImpl;
 
 public class ForexApp {
-	private static final String AUTHENTICATE_KEY = "ddddd00000sdsdsdsdsdsdsdsdsdsdsd-asdasdasdasdasdsda123213213131321";
-	private static final String USER_ID = "1234567";
-	
+	private static final String AUTHENTICATE_KEY = "d00e2ea50267d6f940a523b6917840eb-09fa1a7a9e47c0435a41b113c744c8bd";
+	private static final String USER_ID = "6277689";
 	
 	private static final String INSTRUMENT = "EUR_USD";
 	private static final String DOMAIN = "https://stream-fxpractice.oanda.com";;
 	private static final String TIME_FORMAT="yyyy-MM-dd'T'HH:mm:ss.SSSSSS";
 	private static Logger logger = LoggerFactory.getLogger(ForexApp.class);
-	private static ForexDao dao=new ForexDao();
+
+	private static ForexService service=new ForexServiceImpl();
 	
 	public static void main(String[] args) {
 		System.out.println("ASDASD");
-		read();
+		service.scan("EUR_USD_10:03:2016");
+		
 		
 	}
 
@@ -73,7 +76,8 @@ public class ForexApp {
 					double ask = Double.parseDouble(tick.get("ask")
 							.toString());
 					_result=new ForexData(instrument,bid,ask,time);
-					dao.storeData(_result);
+					service.store(_result);
+					
 					System.out.println(_result);
 				}
 			} else {
@@ -119,9 +123,7 @@ public class ForexApp {
 		} catch (IOException e) {
 			logger.error("EXCEPTION when reading service");
 		}
-		finally{
-			dao.close();
-		}
+		
 
 	}
 
