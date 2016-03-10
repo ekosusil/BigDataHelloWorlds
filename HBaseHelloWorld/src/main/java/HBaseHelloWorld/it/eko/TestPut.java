@@ -18,6 +18,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 public class TestPut {
 
+//test adding command from host machine. 
   public static void main(String args[]) {
     Configuration conf = HBaseConfiguration.create();
     conf.addResource(new Path("/etc/hbase/conf/core-site.xml"));
