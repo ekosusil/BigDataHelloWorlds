@@ -1,9 +1,17 @@
 package com.forex.dao;
 
+
+
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.conf.Configuration;
@@ -11,6 +19,7 @@ import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HTableInterface;
@@ -27,98 +36,186 @@ import org.slf4j.LoggerFactory;
 import com.forex.model.ForexData;
 public class ForexDao {
 	
-	private static final byte[] TABLE_NAME=Bytes.toBytes("forex");
-	private static final byte[] COLUMN_FAMILY=Bytes.toBytes("prive");
-	private static final byte[] COLUMN_NAME_BUY=Bytes.toBytes("buy");
-	private static final byte[] COLUMN_NAME_SELL=Bytes.toBytes("sell");
-	
-	private static Logger logger=LoggerFactory.getLogger(ForexDao.class);
+	private static final byte[] TABLE_NAME = Bytes.toBytes("forex");
+	private static final byte[] COLUMN_FAMILY = Bytes.toBytes("price");
+	private static final byte[] COLUMN_NAME_BUY = Bytes.toBytes("buy");
+	private static final byte[] COLUMN_NAME_SELL = Bytes.toBytes("sell");
+	private static Logger logger = LoggerFactory.getLogger(ForexDao.class);
+	private static final String INSTRUMENT_DATE_SEPARATOR = ";";
+
 	private HTable table;
-	
-	private Put mkPut(ForexData data){
-		Put put=new Put(Bytes.toBytes(data.getInstrument()+"_"+data.getTimeAsDate()));
-		put.add(COLUMN_FAMILY, COLUMN_NAME_BUY, data.getTimeStamp(), Bytes.toBytes(data.getBuyPrice()));
-		put.add(COLUMN_FAMILY,COLUMN_NAME_SELL,data.getTimeStamp(),Bytes.toBytes(data.getSellPrice()));
+
+	private Put mkPut(ForexData data) {
+		Put put = new Put(Bytes.toBytes(data.getInstrument()
+				+ INSTRUMENT_DATE_SEPARATOR + data.getTimeAsDate()));
+		put.add(COLUMN_FAMILY, COLUMN_NAME_BUY, data.getTimeStamp(),
+				Bytes.toBytes(data.getBuyPrice()));
+		put.add(COLUMN_FAMILY, COLUMN_NAME_SELL, data.getTimeStamp(),
+				Bytes.toBytes(data.getSellPrice()));
 		return put;
 	}
-	
-	
-	public List<ForexData> scanAll(String instrument){
-		List<ForexData> data=new LinkedList<ForexData>();
-		Scan scan=new Scan(Bytes.toBytes(instrument));
-		scan=scan.setMaxVersions(Integer.MAX_VALUE);
-		try {
-			ResultScanner rs=table.getScanner(scan);
-			//TODO convert from Result to ForexData
-			for(Result result:rs){
-				String strRes="";
-				strRes+=Bytes.toString(result.getRow());
-				for (Cell kv : result.rawCells()) {
-					strRes+=" Family - "
-							+ Bytes.toString(CellUtil.cloneFamily(kv));
-					strRes+=" : Qualifier - "
-							+ Bytes.toString(CellUtil.cloneQualifier(kv));
-					strRes+=" : Value: "
-							+ Bytes.toDouble(CellUtil.cloneValue(kv)) + " ";
-					System.out.println("=="+strRes);
 
-				}
-			}
-		} catch (IOException e) {
-			logger.error("Error during scanning "+e.getMessage());
-			e.printStackTrace();
-		}
-		return data;
-		
-	}
-	
-	public void storeData(ForexData data){
-		Put put=mkPut(data);
-		try {
-			table.put(put);
-		} catch (RetriesExhaustedWithDetailsException e) {			
-			logger.error("Exception on storing data "+e.getMessage());
-			e.printStackTrace();
-		} catch (InterruptedIOException e) {
-			logger.error("Exception on storing data "+e.getMessage());
-			e.printStackTrace();
-		}
-		
-	}
-	
-	private Get mkGet(ForexData data){
-		Get get=new Get(Bytes.toBytes(data.getInstrument()+"_"+data.getTimeAsDate()));
+	private Get mkGet(String instrument, long timeStamp) {
+		String strDate = ForexData.parseLongAsDate(timeStamp);
+		Get get = new Get(Bytes.toBytes(instrument + INSTRUMENT_DATE_SEPARATOR
+				+ strDate));
 		try {
 			get.addFamily(COLUMN_FAMILY);
+			get.setTimeStamp(timeStamp);
 			get.setMaxVersions(Integer.MAX_VALUE);
 		} catch (IOException e) {
-			logger.error("Exception on querying data "+e.getMessage());
+			logger.error("Exception on querying data " + e.getMessage());
 			e.printStackTrace();
 		}
 		return get;
 	}
-	
-	public void init(){
-		Configuration conf=HBaseConfiguration.create();
-		
-		try {
-			table=new HTable(conf,TABLE_NAME);	
-		} catch (IOException e) {
-			logger.error("Error connection to table = "+e.getMessage());
-		}
-		
+
+	private Delete mkDelete(String instrument, long timeStamp) {
+		String strDate = ForexData.parseLongAsDate(timeStamp);
+		Delete delete = new Delete(Bytes.toBytes(instrument
+				+ ForexDao.INSTRUMENT_DATE_SEPARATOR + strDate));
+		return delete;
 	}
-	
-	public void close(){
-		if(table!=null){
+
+	public void deleteInstrument(String instrument, Date date) {
+		if (date != null && instrument != null) {
+			deleteInstrument(instrument, date.getTime());
+		}
+	}
+
+	public void deleteInstrument(String instrument, long timeStamp) {
+		Delete del = this.mkDelete(instrument, timeStamp);
+		try {
+			table.delete(del);
+		} catch (IOException e) {
+			logger.error("Exception when deleting " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	public void deleteInstrument(String instrument, String strDate) {
+		if (instrument != null && strDate != null) {
+			SimpleDateFormat sdf = new SimpleDateFormat("dd:MM:yyyy");
 			try {
-				table.close();
-			} catch (IOException e) {
-				logger.error("Error closing the connection "+e.getMessage());
+				deleteInstrument(instrument, sdf.parse(strDate));
+			} catch (ParseException e) {
+				logger.error("ERROR When parsing date " + strDate);
 				e.printStackTrace();
 			}
 		}
 	}
+
+	public List<ForexData> scanAll(String instrument) {
+		Map<Long,ForexData> mapData=new HashMap<Long,ForexData>();
+		Scan scan = new Scan();
+		scan = scan.setMaxVersions(Integer.MAX_VALUE);
+		try {
+			ResultScanner rs = table.getScanner(scan);
+			for (Result result : rs) {
+				List<Cell> cells = result.listCells();
+				
+				for (Cell curCell : cells) {
+					ForexData data=null;
+					if(mapData.containsKey(curCell.getTimestamp())){
+						data=mapData.get(curCell.getTimestamp());
+					}
+					else{
+						data=new ForexData();
+						String strKey[] = Bytes.toString(result.getRow()).split(
+								INSTRUMENT_DATE_SEPARATOR);
+						data.setInstrument(strKey[0]);
+						mapData.put(curCell.getTimestamp(), data);
+						
+					}
+					
+					
+					
+					
+					
+					if (Arrays.equals(CellUtil.cloneQualifier(curCell),
+							COLUMN_NAME_BUY)) {
+						data.setBuyPrice(Bytes.toDouble(CellUtil
+								.cloneValue(curCell)));
+					} else if (Arrays.equals(CellUtil.cloneQualifier(curCell),
+							COLUMN_NAME_SELL)) {
+						data.setSellPrice(Bytes.toDouble(CellUtil.cloneValue(curCell)));
+					}
+					data.setTimeStamp(curCell.getTimestamp());
+
+				}
+
+			}
+		} catch (IOException e) {
+			logger.error("Error during scanning " + e.getMessage());
+			e.printStackTrace();
+		}
+		List<ForexData> dataList=new LinkedList<ForexData>();
+		dataList.addAll(mapData.values());
+		System.out.println(dataList.size());
+		return dataList;
+
+	}
+
+	public void storeData(ForexData data) {
+		Put put = mkPut(data);
+		try {
+			table.put(put);
+		} catch (RetriesExhaustedWithDetailsException e) {
+			logger.error("Exception on storing data " + e.getMessage());
+			e.printStackTrace();
+		} catch (InterruptedIOException e) {
+			logger.error("Exception on storing data " + e.getMessage());
+			e.printStackTrace();
+		}
+
+	}
+
+	public ForexData getData(String instrument, long timeStamp) {
+		ForexData _result = null;
+		Get get = mkGet(instrument, timeStamp);
+		if (get != null) {
+			try {
+				Result res = table.get(get);
+				_result = new ForexData();
+				String strKey[] = Bytes.toString(res.getRow()).split(
+						INSTRUMENT_DATE_SEPARATOR);
+				_result.setInstrument(strKey[0]);
+				_result.setTimeStamp(ForexData.parseStringTimeToLong(
+						"dd:MM:yyyy", strKey[1]));
+				_result.setBuyPrice(Bytes.toDouble(res.getValue(COLUMN_FAMILY,
+						COLUMN_NAME_BUY)));
+				_result.setSellPrice(Bytes.toDouble(res.getValue(COLUMN_FAMILY,
+						COLUMN_NAME_SELL)));
+			} catch (IOException e) {
+				logger.error("Exception when executing get " + e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		return _result;
+	}
+
+	public void init() {
+		Configuration conf = HBaseConfiguration.create();
+
+		try {
+			table = new HTable(conf, TABLE_NAME);
+		} catch (IOException e) {
+			logger.error("Error connection to table = " + e.getMessage());
+		}
+
+	}
+
+	public void close() {
+		if (table != null) {
+			try {
+				table.close();
+			} catch (IOException e) {
+				logger.error("Error closing the connection " + e.getMessage());
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	
 	
 

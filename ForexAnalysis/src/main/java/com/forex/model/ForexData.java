@@ -1,5 +1,7 @@
 package com.forex.model;
 
+
+
 import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -7,7 +9,7 @@ import java.text.SimpleDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.forex.ForexApp;
+
 
 public class ForexData {
 	private static Logger logger = LoggerFactory.getLogger(ForexData.class);
@@ -81,18 +83,34 @@ public class ForexData {
 		return "ForexData [instrument=" + instrument + ", buyPrice=" + buyPrice
 				+ ", sellPrice=" + sellPrice + ", timeStamp=" + timeStamp + "]";
 	}
+	
+	public static long parseStringTimeToLong(String strFormat, String strTime) {
+		long _result = 0;
+		if (strFormat != null && strTime != null) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(strFormat);
+				Date date = sdf.parse(strTime);
+				_result = date.getTime();
+			} catch (ParseException e) {
+				logger.error("Error Parsing the date");
+			}
+		}
+		return _result;
+	}
+	
+	public static String parseLongAsDate(long timeStamp){
+		Date date=new Date(timeStamp);
+		String strFormat="dd:MM:yyyy";
+		SimpleDateFormat sdf=new SimpleDateFormat(strFormat);
+		return sdf.format(date);
+	}
 
+	public static void main(String args[]){
+		long lTime=1395450441154l;
+		System.out.println(parseLongAsDate(lTime));
+	}
+	
 	
 
-	public static void main(String args[]) {
-
-		String strTime = "2014-03-21T17:56:13.668154Z";
-		String strTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS";
-		
-		ForexData f = new ForexData();
-		f.setTimeStamp(System.currentTimeMillis());
-		System.out.println(f.getTimeAsString());
-		System.out.println(f.getTimeAsDate());
-	}
 
 }
