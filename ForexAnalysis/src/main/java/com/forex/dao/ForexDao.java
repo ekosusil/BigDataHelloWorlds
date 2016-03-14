@@ -29,6 +29,9 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.PrefixFilter;
+import org.apache.hadoop.hbase.filter.TimestampsFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +80,61 @@ public class ForexDao {
 		return delete;
 	}
 
+	private Scan mkScanWithTimestampFilter(String instrument,long timeStampBegin,
+			long timeStampEnd) {
+		Scan scan = new Scan();
+		List<Long> timeStamps = new LinkedList<Long>();
+		for (long id = timeStampBegin; id <= timeStampEnd; id++) {
+			timeStamps.add(id);
+		}
+		
+		FilterList filterList=new FilterList();
+		filterList.addFilter(new TimestampsFilter(timeStamps));
+		filterList.addFilter(new PrefixFilter(Bytes.toBytes(instrument)));
+		scan.setFilter(filterList);
+		scan.setMaxVersions(Integer.MAX_VALUE);
+		return scan;
+	}
+
+	private List<ForexData> readFromResultScanner(ResultScanner rs) {
+		Map<Long, ForexData> mapData = new HashMap<Long, ForexData>();
+		for (Result result : rs) {
+			List<Cell> cells = result.listCells();
+
+			for (Cell curCell : cells) {
+				ForexData data = null;
+				if (mapData.containsKey(curCell.getTimestamp())) {
+					data = mapData.get(curCell.getTimestamp());
+				} else {
+					data = new ForexData();
+					String strKey[] = Bytes.toString(result.getRow()).split(
+							INSTRUMENT_DATE_SEPARATOR);
+					data.setInstrument(strKey[0]);
+					mapData.put(curCell.getTimestamp(), data);
+
+				}
+
+				if (Arrays.equals(CellUtil.cloneQualifier(curCell),
+						COLUMN_NAME_BUY)) {
+					data.setBuyPrice(Bytes.toDouble(CellUtil
+							.cloneValue(curCell)));
+				} else if (Arrays.equals(CellUtil.cloneQualifier(curCell),
+						COLUMN_NAME_SELL)) {
+					data.setSellPrice(Bytes.toDouble(CellUtil
+							.cloneValue(curCell)));
+				}
+				data.setTimeStamp(curCell.getTimestamp());
+
+			}
+
+		}
+
+		List<ForexData> dataList = new LinkedList<ForexData>();
+		dataList.addAll(mapData.values());
+		System.out.println(dataList.size());
+		return dataList;
+	}
+
 	public void deleteInstrument(String instrument, Date date) {
 		if (date != null && instrument != null) {
 			deleteInstrument(instrument, date.getTime());
@@ -105,55 +163,38 @@ public class ForexDao {
 		}
 	}
 
-	public List<ForexData> scanAll(String instrument) {
-		Map<Long,ForexData> mapData=new HashMap<Long,ForexData>();
-		Scan scan = new Scan();
-		scan = scan.setMaxVersions(Integer.MAX_VALUE);
-		try {
-			ResultScanner rs = table.getScanner(scan);
-			for (Result result : rs) {
-				List<Cell> cells = result.listCells();
-				
-				for (Cell curCell : cells) {
-					ForexData data=null;
-					if(mapData.containsKey(curCell.getTimestamp())){
-						data=mapData.get(curCell.getTimestamp());
-					}
-					else{
-						data=new ForexData();
-						String strKey[] = Bytes.toString(result.getRow()).split(
-								INSTRUMENT_DATE_SEPARATOR);
-						data.setInstrument(strKey[0]);
-						mapData.put(curCell.getTimestamp(), data);
-						
-					}
-					
-					
-					
-					
-					
-					if (Arrays.equals(CellUtil.cloneQualifier(curCell),
-							COLUMN_NAME_BUY)) {
-						data.setBuyPrice(Bytes.toDouble(CellUtil
-								.cloneValue(curCell)));
-					} else if (Arrays.equals(CellUtil.cloneQualifier(curCell),
-							COLUMN_NAME_SELL)) {
-						data.setSellPrice(Bytes.toDouble(CellUtil.cloneValue(curCell)));
-					}
-					data.setTimeStamp(curCell.getTimestamp());
-
-				}
-
+	public List<ForexData> scanByInstrumentWithinTimeRange(String instrument,
+			long timeStampBegin, long timeStampEnd) {
+		List<ForexData> forexData = null;
+		if (instrument != null && (!instrument.isEmpty())) {
+			Scan scan = this.mkScanWithTimestampFilter(instrument, timeStampBegin, timeStampEnd);
+			try {
+				ResultScanner rs = table.getScanner(scan);
+				forexData = this.readFromResultScanner(rs);
+			} catch (IOException e) {
+				logger.error("ERROR When scanning data " + e.getMessage());
 			}
-		} catch (IOException e) {
-			logger.error("Error during scanning " + e.getMessage());
-			e.printStackTrace();
+			
 		}
-		List<ForexData> dataList=new LinkedList<ForexData>();
-		dataList.addAll(mapData.values());
-		System.out.println(dataList.size());
-		return dataList;
+		return forexData;
+	}
 
+	public List<ForexData> scanByInstrument(String instrument) {
+		List<ForexData> forexData = null;
+
+		if (instrument != null && (!instrument.isEmpty())) {
+			Scan scan = new Scan();
+			PrefixFilter filter = new PrefixFilter(Bytes.toBytes(instrument));
+			scan = scan.setMaxVersions(Integer.MAX_VALUE);
+			scan.setFilter(filter);
+			try {
+				ResultScanner rs = table.getScanner(scan);
+				forexData = this.readFromResultScanner(rs);
+			} catch (IOException e) {
+				logger.error("ERROR When scanning data " + e.getMessage());
+			}
+		}
+		return forexData;
 	}
 
 	public void storeData(ForexData data) {
