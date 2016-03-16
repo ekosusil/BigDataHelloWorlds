@@ -1,4 +1,4 @@
-package com.forex.tests;
+package com.eko.forexAnalytics;
 
 import static org.junit.Assert.assertTrue;
 
@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.forex.model.ForexData;
 import com.forex.services.ForexService;
-import com.forex.servicesImpl.ForexServiceImpl;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -16,7 +15,7 @@ public class ForexServiceImpleTest {
 	private static ForexService fx;
 	@BeforeClass
 	public static void init(){
-		fx=new ForexServiceImpl();
+	//	fx=new ForexServiceImpl();
 		
 	}
 	@Test
@@ -28,7 +27,6 @@ public class ForexServiceImpleTest {
 		data.setBuyPrice(15236);
 		data.setSellPrice(16223);
 		fx.store(data);
-		System.out.println(fx.getData(data.getInstrument(), data.getTimeStamp()));
 		assertTrue(fx.getData(data.getInstrument(), data.getTimeStamp())!=null);
 	}
 	

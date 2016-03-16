@@ -1,4 +1,4 @@
-package HBaseHelloWorld.it.eko;
+package com.eko.forexAnalytics;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
