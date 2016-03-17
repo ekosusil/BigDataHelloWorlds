@@ -28,8 +28,10 @@ public class ForexServiceImpleTest {
 		data.setBuyPrice(15236);
 		data.setSellPrice(16223);
 		fx.store(data);
-		System.out.println(fx.getData(data.getInstrument(), data.getTimeStamp()));
-		assertTrue(fx.getData(data.getInstrument(), data.getTimeStamp())!=null);
+		
+		ForexData fromDb=fx.getData(data.getInstrument(), data.getTimeStamp());
+		System.out.println("Get operation "+fromDb);
+		assertTrue(data.equals(fromDb));
 	}
 	
 	@Test

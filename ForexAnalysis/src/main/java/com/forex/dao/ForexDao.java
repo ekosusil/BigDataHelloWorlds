@@ -1,7 +1,5 @@
 package com.forex.dao;
 
-
-
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.text.ParseException;
@@ -37,20 +35,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.forex.model.ForexData;
+
 public class ForexDao {
-	
+
 	private static final byte[] TABLE_NAME = Bytes.toBytes("forex");
 	private static final byte[] COLUMN_FAMILY = Bytes.toBytes("price");
 	private static final byte[] COLUMN_NAME_BUY = Bytes.toBytes("buy");
 	private static final byte[] COLUMN_NAME_SELL = Bytes.toBytes("sell");
 	private static Logger logger = LoggerFactory.getLogger(ForexDao.class);
-	private static final String INSTRUMENT_DATE_SEPARATOR = ";";
 
 	private HTable table;
 
 	private Put mkPut(ForexData data) {
-		Put put = new Put(Bytes.toBytes(data.getInstrument()
-				+ INSTRUMENT_DATE_SEPARATOR + data.getTimeAsDate()));
+		Put put = new Put(Bytes.toBytes(data.createRowKey()));
 		put.add(COLUMN_FAMILY, COLUMN_NAME_BUY, data.getTimeStamp(),
 				Bytes.toBytes(data.getBuyPrice()));
 		put.add(COLUMN_FAMILY, COLUMN_NAME_SELL, data.getTimeStamp(),
@@ -59,9 +56,8 @@ public class ForexDao {
 	}
 
 	private Get mkGet(String instrument, long timeStamp) {
-		String strDate = ForexData.parseLongAsDate(timeStamp);
-		Get get = new Get(Bytes.toBytes(instrument + INSTRUMENT_DATE_SEPARATOR
-				+ strDate));
+		ForexData data = new ForexData(instrument, 0.0, 0.0, timeStamp);
+		Get get = new Get(Bytes.toBytes(data.createRowKey()));
 		try {
 			get.addFamily(COLUMN_FAMILY);
 			get.setTimeStamp(timeStamp);
@@ -74,21 +70,20 @@ public class ForexDao {
 	}
 
 	private Delete mkDelete(String instrument, long timeStamp) {
-		String strDate = ForexData.parseLongAsDate(timeStamp);
-		Delete delete = new Delete(Bytes.toBytes(instrument
-				+ ForexDao.INSTRUMENT_DATE_SEPARATOR + strDate));
+		ForexData data = new ForexData(instrument, 0.0, 0.0, timeStamp);
+		Delete delete = new Delete(Bytes.toBytes(data.createRowKey()));
 		return delete;
 	}
 
-	private Scan mkScanWithTimestampFilter(String instrument,long timeStampBegin,
-			long timeStampEnd) {
+	private Scan mkScanWithTimestampFilter(String instrument,
+			long timeStampBegin, long timeStampEnd) {
 		Scan scan = new Scan();
 		List<Long> timeStamps = new LinkedList<Long>();
 		for (long id = timeStampBegin; id <= timeStampEnd; id++) {
 			timeStamps.add(id);
 		}
-		
-		FilterList filterList=new FilterList();
+
+		FilterList filterList = new FilterList();
 		filterList.addFilter(new TimestampsFilter(timeStamps));
 		filterList.addFilter(new PrefixFilter(Bytes.toBytes(instrument)));
 		scan.setFilter(filterList);
@@ -107,9 +102,7 @@ public class ForexDao {
 					data = mapData.get(curCell.getTimestamp());
 				} else {
 					data = new ForexData();
-					String strKey[] = Bytes.toString(result.getRow()).split(
-							INSTRUMENT_DATE_SEPARATOR);
-					data.setInstrument(strKey[0]);
+					data.parseRowKey(Bytes.toString(result.getRow()));
 					mapData.put(curCell.getTimestamp(), data);
 
 				}
@@ -167,14 +160,15 @@ public class ForexDao {
 			long timeStampBegin, long timeStampEnd) {
 		List<ForexData> forexData = null;
 		if (instrument != null && (!instrument.isEmpty())) {
-			Scan scan = this.mkScanWithTimestampFilter(instrument, timeStampBegin, timeStampEnd);
+			Scan scan = this.mkScanWithTimestampFilter(instrument,
+					timeStampBegin, timeStampEnd);
 			try {
 				ResultScanner rs = table.getScanner(scan);
 				forexData = this.readFromResultScanner(rs);
 			} catch (IOException e) {
 				logger.error("ERROR When scanning data " + e.getMessage());
 			}
-			
+
 		}
 		return forexData;
 	}
@@ -194,6 +188,7 @@ public class ForexDao {
 				logger.error("ERROR When scanning data " + e.getMessage());
 			}
 		}
+
 		return forexData;
 	}
 
@@ -218,11 +213,8 @@ public class ForexDao {
 			try {
 				Result res = table.get(get);
 				_result = new ForexData();
-				String strKey[] = Bytes.toString(res.getRow()).split(
-						INSTRUMENT_DATE_SEPARATOR);
-				_result.setInstrument(strKey[0]);
-				_result.setTimeStamp(ForexData.parseStringTimeToLong(
-						"dd:MM:yyyy", strKey[1]));
+				_result.parseRowKey(Bytes.toString(res.getRow()));
+				_result.setTimeStamp(res.rawCells()[0].getTimestamp());
 				_result.setBuyPrice(Bytes.toDouble(res.getValue(COLUMN_FAMILY,
 						COLUMN_NAME_BUY)));
 				_result.setSellPrice(Bytes.toDouble(res.getValue(COLUMN_FAMILY,
@@ -256,8 +248,5 @@ public class ForexDao {
 			}
 		}
 	}
-	
-	
-	
 
 }

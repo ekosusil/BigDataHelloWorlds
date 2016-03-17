@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.forex.model.ForexData;
+import com.forex.util.FunctionHelpers;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -53,7 +54,7 @@ public class ForexDataSpout extends BaseRichSpout{
 					String instrument = tick.get("instrument").toString();
 					String strTime = tick.get("time").toString();
 					
-					long time=ForexData.parseStringTimeToLong(TIME_FORMAT,strTime);
+					long time=FunctionHelpers.parseStringTimeToLong(TIME_FORMAT,strTime);
 					double bid = Double.parseDouble(tick.get("bid")
 							.toString());
 					double ask = Double.parseDouble(tick.get("ask")
