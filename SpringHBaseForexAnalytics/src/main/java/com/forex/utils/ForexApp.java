@@ -18,13 +18,10 @@ public class ForexApp {
 		ForexUtils forexUtils=context.getBean(ForexUtils.class);
 
 		ForexRepository forexRepository=context.getBean(ForexRepository.class);
-		List<ForexData> data=forexRepository.scan("EUR_USD");
-		System.out.println("Forex data "+data.size());
-		System.out.println(data);
 		
 		
 		ForexData fxData=new ForexData();
-		fxData.setInstrument("EUR_RMB");
+		fxData.setInstrument("GOLD_AUR");
 		fxData.setTimeStamp(145771857515l);
 		fxData.setBuyPrice(15236);
 		fxData.setSellPrice(16223);

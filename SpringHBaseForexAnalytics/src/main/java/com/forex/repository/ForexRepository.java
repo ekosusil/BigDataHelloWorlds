@@ -1,5 +1,6 @@
 package com.forex.repository;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,6 +11,8 @@ import java.util.NavigableMap;
 
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
+import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
@@ -21,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.hadoop.hbase.HbaseTemplate;
 import org.springframework.data.hadoop.hbase.ResultsExtractor;
 import org.springframework.data.hadoop.hbase.RowMapper;
+import org.springframework.data.hadoop.hbase.TableCallback;
 import org.springframework.stereotype.Repository;
 
 import com.forex.model.ForexData;
@@ -35,19 +39,28 @@ public class ForexRepository {
 	private static final String STR_COLUMN_NAME_BUY = "buy";
 	private static final String STR_COLUMN_NAME_SELL = "sell";
 
-	private static final byte[] TABLE_NAME = Bytes.toBytes(STR_TABLE_NAME);
 	private static final byte[] COLUMN_FAMILY = Bytes
 			.toBytes(STR_COLUMN_FAMILY);
 	private static final byte[] COLUMN_NAME_BUY = Bytes
 			.toBytes(STR_COLUMN_NAME_BUY);
 	private static final byte[] COLUMN_NAME_SELL = Bytes
 			.toBytes(STR_COLUMN_NAME_SELL);
-	private static final String INSTRUMENT_DATE_SEPARATOR = ";";
-	private static final long RETRIEVE_ALL_VERSION = 0l;
+
+
+
+	private Put mkPut(ForexData data) {
+		Put put = new Put(Bytes.toBytes(data.createRowKey()));
+		put.add(COLUMN_FAMILY, COLUMN_NAME_BUY, data.getTimeStamp(),
+				Bytes.toBytes(data.getBuyPrice()));
+		put.add(COLUMN_FAMILY, COLUMN_NAME_SELL, data.getTimeStamp(),
+				Bytes.toBytes(data.getSellPrice()));
+		return put;
+
+	}
 
 	private Scan mkScanByInstrument(String instrument) {
 		Scan scan = new Scan();
-		List<Long> timeStamps = new LinkedList<Long>();
+		
 		scan.setFilter(new PrefixFilter(Bytes.toBytes(instrument)));
 		scan.setMaxVersions(Integer.MAX_VALUE);
 		return scan;
@@ -90,9 +103,7 @@ public class ForexRepository {
 						data = mapData.get(curCell.getTimestamp());
 					} else {
 						data = new ForexData();
-						String strKey[] = Bytes.toString(res.getRow()).split(
-								INSTRUMENT_DATE_SEPARATOR);
-						data.setInstrument(strKey[0]);
+						data.parseRowKey(Bytes.toString(res.getRow()));
 						mapData.put(curCell.getTimestamp(), data);
 
 					}
@@ -124,48 +135,46 @@ public class ForexRepository {
 	}
 
 	public double getBuy(String instrument, long timeStamp) {
-		
-		
-		
-		return 0;
+		return getData(instrument, timeStamp).getBuyPrice();
 	}
 
 	public double getSell(String instrument, long timeStamp) {
-		// TODO Auto-generated method stub
-		return 0;
+		return getData(instrument, timeStamp).getSellPrice();
 	}
 
 	public ForexData getData(String instrument, long timeStamp) {
-		return hbaseTemplate.get(STR_TABLE_NAME, instrument+INSTRUMENT_DATE_SEPARATOR+ForexData.parseLongAsDate(timeStamp), STR_COLUMN_FAMILY, new RowMapper<ForexData>(){
+		final ForexData _result = new ForexData(instrument, 0.0, 0.0, timeStamp);
+		return hbaseTemplate.get(STR_TABLE_NAME, _result.createRowKey(),
+				STR_COLUMN_FAMILY, new RowMapper<ForexData>() {
 
-			public ForexData mapRow(Result res, int arg1) throws Exception {
-			
-				ForexData _result=new ForexData();
-				String strKey[] = Bytes.toString(res.getRow()).split(
-						INSTRUMENT_DATE_SEPARATOR);
-				_result.setInstrument(strKey[0]);
-				_result.setTimeStamp(ForexData.parseStringTimeToLong(
-						"dd:MM:yyyy", strKey[1]));
-				_result.setBuyPrice(Bytes.toDouble(res.getValue(COLUMN_FAMILY,
-						COLUMN_NAME_BUY)));
-				_result.setSellPrice(Bytes.toDouble(res.getValue(COLUMN_FAMILY,
-						COLUMN_NAME_SELL)));
-				
-				return _result;
-			}
-			
-		});
-		
+					public ForexData mapRow(Result res, int arg1)
+							throws Exception {
+
+						_result.parseRowKey(Bytes.toString(res.getRow()));
+						_result.setTimeStamp(res.rawCells()[0].getTimestamp());
+						_result.setBuyPrice(Bytes.toDouble(res.getValue(
+								COLUMN_FAMILY, COLUMN_NAME_BUY)));
+						_result.setSellPrice(Bytes.toDouble(res.getValue(
+								COLUMN_FAMILY, COLUMN_NAME_SELL)));
+
+						return _result;
+					}
+				});
+
 	}
 
-	public void store(ForexData forexData) {
-		String rowName = forexData.getInstrument() + INSTRUMENT_DATE_SEPARATOR
-				+ forexData.getTimeAsDate();
-	
-		hbaseTemplate.put(STR_TABLE_NAME, rowName, STR_COLUMN_FAMILY,
-				STR_COLUMN_NAME_BUY, Bytes.toBytes(forexData.getBuyPrice()));
-		hbaseTemplate.put(STR_TABLE_NAME, rowName, STR_COLUMN_FAMILY,
-				STR_COLUMN_NAME_SELL, Bytes.toBytes(forexData.getSellPrice()));
+	public void store(final ForexData forexData) {
+
+		hbaseTemplate.execute(STR_TABLE_NAME, new TableCallback<Object>() {
+
+			public Object doInTable(HTableInterface table) throws IOException {
+				Put put = mkPut(forexData);
+				table.put(put);
+				return null;
+			}
+
+		});
+
 	}
 
 	public List<ForexData> scanWithinTimeRange(String instrument,

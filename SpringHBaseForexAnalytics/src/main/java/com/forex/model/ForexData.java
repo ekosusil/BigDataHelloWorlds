@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 
 public class ForexData {
+	private static final String INSTRUMENT_DATE_SEPARATOR_ROW_KEY_HBASE=";";
 	private static Logger logger = LoggerFactory.getLogger(ForexData.class);
 	public ForexData() {
 	}
@@ -24,11 +25,13 @@ public class ForexData {
 		this.timeStamp = timeStamp;
 	}
 
+	
+
 	private String instrument;
 	private double buyPrice;
 	private double sellPrice;
 	private long timeStamp;
-
+	
 	public Date getDate() {
 		Date _result = null;
 		_result = new Date(timeStamp);
@@ -40,10 +43,17 @@ public class ForexData {
 		return formatter.format(getDate());
 	}
 
-	public String getTimeAsDate() {
+	public String getDateAsString() {
 		SimpleDateFormat formatter = new SimpleDateFormat("dd:MM:yyyy");
 		return formatter.format(getDate());
 
+	}
+	
+	public void parseRowKey(String str){
+		if (str!=null && str.contains(INSTRUMENT_DATE_SEPARATOR_ROW_KEY_HBASE)){
+			String tokens[]=str.split(INSTRUMENT_DATE_SEPARATOR_ROW_KEY_HBASE);
+			this.setInstrument(tokens[0]);
+		}
 	}
 
 	public String getInstrument() {
@@ -78,37 +88,17 @@ public class ForexData {
 		this.timeStamp = timeStamp;
 	}
 
+	public String createRowKey(){
+		return this.instrument+INSTRUMENT_DATE_SEPARATOR_ROW_KEY_HBASE+this.getDateAsString();
+	}
+	
 	@Override
 	public String toString() {
 		return "ForexData [instrument=" + instrument + ", buyPrice=" + buyPrice
 				+ ", sellPrice=" + sellPrice + ", timeStamp=" + timeStamp + "]";
 	}
-	
-	public static long parseStringTimeToLong(String strFormat, String strTime) {
-		long _result = 0;
-		if (strFormat != null && strTime != null) {
-			try {
-				SimpleDateFormat sdf = new SimpleDateFormat(strFormat);
-				Date date = sdf.parse(strTime);
-				_result = date.getTime();
-			} catch (ParseException e) {
-				logger.error("Error Parsing the date");
-			}
-		}
-		return _result;
-	}
-	
-	public static String parseLongAsDate(long timeStamp){
-		Date date=new Date(timeStamp);
-		String strFormat="dd:MM:yyyy";
-		SimpleDateFormat sdf=new SimpleDateFormat(strFormat);
-		return sdf.format(date);
-	}
 
-	public static void main(String args[]){
-		long lTime=1395450441154l;
-		System.out.println(parseLongAsDate(lTime));
-	}
+
 	
 	
 
