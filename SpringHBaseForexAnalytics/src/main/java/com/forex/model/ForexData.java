@@ -98,6 +98,19 @@ public class ForexData {
 				+ ", sellPrice=" + sellPrice + ", timeStamp=" + timeStamp + "]";
 	}
 
+	@Override
+	public boolean equals(Object object){
+		
+		if (object==null)
+			return false;
+		else if(!(object instanceof ForexData))
+			return false;
+		else{
+			ForexData that=(ForexData)object;
+			return (that.instrument.equals(this.instrument) && that.timeStamp == this.timeStamp  && that.buyPrice==this.buyPrice && that.sellPrice == this.sellPrice);
+		}
+		
+	}
 
 	
 	
