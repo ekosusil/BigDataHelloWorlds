@@ -9,7 +9,7 @@ then put all the data to hbase.
 
 
 <h3>SpringHbaseForexAnalysis</h3>
-Experimentation combination using Hbase and Spring.
+Experimentation combination using Hbase and Spring. The use case being examined is still the same as before, analyzing data of foreign exchange
 
 <h3>SparkStreamCassandra</h3>
-Experiment using spark streaming, and store the results into cassandra. 
+Experiment using spark streaming, and store the results into cassandra. The use case being examined is still the same as before, analyzing data of foreign exchange
