@@ -74,7 +74,6 @@ public class JavaCustomReceiver extends Receiver<String> {
 											"ask").toString());
 									_result = new ForexData(instrument, bid,
 											ask, time);
-									// service.store(_result);
 
 									System.out.println(_result);
 								}
@@ -88,7 +87,6 @@ public class JavaCustomReceiver extends Receiver<String> {
 
 						return _result;
 					}
-
 				});
 		fxData.foreachRDD(new VoidFunction<JavaRDD<ForexData>>(){
 
