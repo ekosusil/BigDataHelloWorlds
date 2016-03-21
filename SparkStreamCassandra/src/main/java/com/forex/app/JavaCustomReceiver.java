@@ -30,7 +30,7 @@ import org.json.simple.JSONValue;
 import org.apache.spark.streaming.Time;
 
 import com.forex.model.ForexData;
-import com.forex.util.FunctionHelpers;
+import com.forex.utils.FunctionHelpers;
 
 public class JavaCustomReceiver extends Receiver<String> {
 

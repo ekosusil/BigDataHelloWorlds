@@ -22,5 +22,33 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/cloudera/.m2/repository/org/apache/hbase/hbase-client/0.98.6-cdh5.3.0/hbase-client-0.98.6-cdh5.3.0.jar" sourcepath="/home/cloudera/.m2/repository/org/apache/hbase/hbase-client/0.98.6-cdh5.3.0/hbase-client-0.98.6-cdh5.3.0-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="org.apache.hbase"/>
+			<attribute name="maven.artifactId" value="hbase-client"/>
+			<attribute name="maven.version" value="0.98.6-cdh5.3.0"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/home/cloudera/.m2/repository/com/googlecode/json-simple/json-simple/1.1/json-simple-1.1.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="com.googlecode.json-simple"/>
+			<attribute name="maven.artifactId" value="json-simple"/>
+			<attribute name="maven.version" value="1.1"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/home/cloudera/.m2/repository/org/apache/hbase/hbase-common/0.98.6-cdh5.3.0/hbase-common-0.98.6-cdh5.3.0.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="org.apache.hbase"/>
+			<attribute name="maven.artifactId" value="hbase-common"/>
+			<attribute name="maven.version" value="0.98.6-cdh5.3.0"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/SpringHBaseForexAnalytics"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
