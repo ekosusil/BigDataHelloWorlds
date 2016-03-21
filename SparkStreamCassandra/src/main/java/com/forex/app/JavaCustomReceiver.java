@@ -18,6 +18,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -30,14 +31,17 @@ import org.json.simple.JSONValue;
 import org.apache.spark.streaming.Time;
 
 import com.forex.model.ForexData;
-import com.forex.utils.FunctionHelpers;
+import com.forex.services.ForexService;
+import com.forex.servicesImpl.ForexServiceImpl;
+import com.forex.util.FunctionHelpers;
 
 public class JavaCustomReceiver extends Receiver<String> {
 
 	private static final String TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS";
 
 	public static void main(String args[]) {
-
+	
+	
 		SparkConf conf = new SparkConf().setAppName("Test Custom Receiver")
 				.setMaster("local[2]");
 		JavaStreamingContext ssc = new JavaStreamingContext(conf, new Duration(
@@ -51,11 +55,12 @@ public class JavaCustomReceiver extends Receiver<String> {
 				.map(new Function<String, ForexData>() {
 
 					public ForexData call(String responseLine) throws Exception {
-						ForexData _result = new ForexData();
+						ForexData _result = null;
 
 						if (responseLine != null) {
 							Object obj = JSONValue.parse(responseLine);
 							if (obj != null) {
+								
 								JSONObject tick = (JSONObject) obj;
 
 								if (tick.containsKey("tick")) {
@@ -88,15 +93,27 @@ public class JavaCustomReceiver extends Receiver<String> {
 						return _result;
 					}
 				});
-		fxData.foreachRDD(new VoidFunction<JavaRDD<ForexData>>(){
+		fxData.foreachRDD(new VoidFunction<JavaRDD<ForexData>>() {
 
 			public void call(JavaRDD<ForexData> arg0) throws Exception {
 				
-				List<ForexData> dt=arg0.collect();
-				for(ForexData fxDt:dt)
-					System.out.println(fxDt);
+				arg0.foreach(new VoidFunction<ForexData>(){
+					 
+					
+					
+					public void call(ForexData fxData) throws Exception {
+						if(fxData!=null){
+							ForexService fxService=ForexServiceImpl.getInstance();
+							System.out.println(fxData);
+							fxService.store(fxData);
+						//	forexRepository.store(fxData);
+						}
+						
+					}
+					
+				});
 			}
-			
+
 		});
 
 		ssc.start();
