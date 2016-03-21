@@ -3,6 +3,7 @@ package com.forex.model;
 
 
 import java.util.Date;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -11,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 
 
-public class ForexData {
+public class ForexData implements Serializable {
 	private static final String INSTRUMENT_DATE_SEPARATOR_ROW_KEY_HBASE=";";
 	private static Logger logger = LoggerFactory.getLogger(ForexData.class);
 	public ForexData() {

@@ -30,7 +30,7 @@ public class HBaseStoreBolt extends BaseRichBolt {
 
 	public void prepare(Map arg0, TopologyContext arg1, OutputCollector collector) {
 		_collector=collector;
-		service=new ForexServiceImpl();
+		service=ForexServiceImpl.getInstance();
 		
 	}
 

@@ -2,6 +2,7 @@ package com.forex.dao;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -36,9 +37,9 @@ import org.slf4j.LoggerFactory;
 
 import com.forex.model.ForexData;
 
-public class ForexDao {
+public class ForexDao implements Serializable {
 
-	private static final byte[] TABLE_NAME = Bytes.toBytes("forex");
+	private static final byte[] TABLE_NAME = Bytes.toBytes("forex_spark");
 	private static final byte[] COLUMN_FAMILY = Bytes.toBytes("price");
 	private static final byte[] COLUMN_NAME_BUY = Bytes.toBytes("buy");
 	private static final byte[] COLUMN_NAME_SELL = Bytes.toBytes("sell");

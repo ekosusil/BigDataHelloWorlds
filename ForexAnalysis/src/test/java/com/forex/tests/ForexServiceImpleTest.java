@@ -11,12 +11,13 @@ import com.forex.servicesImpl.ForexServiceImpl;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+
 public class ForexServiceImpleTest {
 
 	private static ForexService fx;
 	@BeforeClass
 	public static void init(){
-		fx=new ForexServiceImpl();
+		fx=ForexServiceImpl.getInstance();
 		
 	}
 	@Test
