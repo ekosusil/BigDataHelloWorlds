@@ -2,17 +2,18 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>SparkStream</groupId>
-	<artifactId>SparkStream</artifactId>
+	<groupId>ForexAnalyticsSparkStream</groupId>
+	<artifactId>ForexAnalyticsSparkStream</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>SparkStream</name>
+	<name>ForexAnalyticsSparkStream</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+
 	<dependencies>
 
 		<dependency>
@@ -21,7 +22,7 @@
 			<version>1.6.1</version>
 			<exclusions>
 
-			
+
 
 				<exclusion>
 					<groupId>org.mortbay.jetty</groupId>
@@ -55,7 +56,7 @@
 			<artifactId>httpclient</artifactId>
 			<version>4.3</version>
 			<scope>compile</scope>
-			
+
 		</dependency>
 
 
@@ -66,6 +67,11 @@
 			<version>1.1</version>
 			<scope>compile</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

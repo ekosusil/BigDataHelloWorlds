@@ -49,8 +49,8 @@ public class JavaCustomReceiver extends Receiver<String> {
 				1000));
 
 		JavaReceiverInputDStream<String> lines = ssc
-				.receiverStream(new JavaCustomReceiver("6277689",
-						"d00e2ea50267d6f940a523b6917840eb-09fa1a7a9e47c0435a41b113c744c8bd"));
+				.receiverStream(new JavaCustomReceiver("",
+						""));
 
 		JavaDStream<ForexData> fxData = lines
 				.map(new Function<String, ForexData>() {
