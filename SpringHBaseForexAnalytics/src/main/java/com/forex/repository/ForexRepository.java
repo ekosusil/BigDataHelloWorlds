@@ -34,7 +34,7 @@ import com.forex.services.ForexService;
 public class ForexRepository {
 	@Autowired
 	private HbaseTemplate hbaseTemplate;
-	private static final String STR_TABLE_NAME = "forex";
+	private static final String STR_TABLE_NAME = "forex_spark";
 	private static final String STR_COLUMN_FAMILY = "price";
 	private static final String STR_COLUMN_NAME_BUY = "buy";
 	private static final String STR_COLUMN_NAME_SELL = "sell";
@@ -46,7 +46,7 @@ public class ForexRepository {
 	private static final byte[] COLUMN_NAME_SELL = Bytes
 			.toBytes(STR_COLUMN_NAME_SELL);
 
-
+	
 
 	private Put mkPut(ForexData data) {
 		Put put = new Put(Bytes.toBytes(data.createRowKey()));
