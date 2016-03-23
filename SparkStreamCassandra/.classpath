@@ -22,6 +22,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/ForexAnalysis"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ForexAnalyticsModel"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ForexAnalyticsWithHBase"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

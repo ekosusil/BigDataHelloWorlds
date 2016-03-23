@@ -30,6 +30,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.apache.spark.streaming.Time;
 
+import com.forex.dao.HbaseDaoFactory;
 import com.forex.model.ForexData;
 import com.forex.services.ForexService;
 import com.forex.servicesImpl.ForexServiceImpl;
@@ -48,8 +49,8 @@ public class JavaCustomReceiver extends Receiver<String> {
 				1000));
 
 		JavaReceiverInputDStream<String> lines = ssc
-				.receiverStream(new JavaCustomReceiver(" ",
-						" "));
+				.receiverStream(new JavaCustomReceiver("6277689",
+						"d00e2ea50267d6f940a523b6917840eb-09fa1a7a9e47c0435a41b113c744c8bd"));
 
 		JavaDStream<ForexData> fxData = lines
 				.map(new Function<String, ForexData>() {
@@ -103,10 +104,10 @@ public class JavaCustomReceiver extends Receiver<String> {
 					
 					public void call(ForexData fxData) throws Exception {
 						if(fxData!=null){
-							ForexService fxService=ForexServiceImpl.getInstance();
+							ForexService fxService=ForexServiceImpl.getInstance(HbaseDaoFactory.getInstance());
 							System.out.println(fxData);
 							fxService.store(fxData);
-						//	forexRepository.store(fxData);
+							
 						}
 						
 					}
