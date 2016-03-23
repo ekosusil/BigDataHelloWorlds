@@ -10,7 +10,7 @@ This project contains the hbase implementation for CRUD operation for ForexAnaly
 <h3><a href="https://github.com/ekosusil/BigDataHelloWorlds/tree/master/ForexAnalysisStorm">ForexAnalysisStorm</a></h3>
 The project containing storm topology for streaming ForexData (obtained from Oanda), then performing simple analytics. For now the project directly store the data obtained from Oanda's rest endpoint to HBase. In future, basic trading decisions will be implemented. 
 
-<h3>ForexAnalysisSpark</h3>
+<h3><a href="https://github.com/ekosusil/BigDataHelloWorlds/tree/master/ForexAnalyticsSparkStream">ForexAnalysisSpark</a></h3>
 
 <h3>SpringHbaseForexAnalysis</h3>
 Exprimenting framework Spring data for accessing HBase.
