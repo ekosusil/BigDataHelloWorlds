@@ -18,17 +18,14 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.rdd.RDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.receiver.Receiver;
-import org.apache.spark.api.java.function.Function2;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.apache.spark.streaming.Time;
 
 import com.forex.dao.HbaseDaoFactory;
 import com.forex.model.ForexData;
@@ -49,8 +46,8 @@ public class JavaCustomReceiver extends Receiver<String> {
 				1000));
 
 		JavaReceiverInputDStream<String> lines = ssc
-				.receiverStream(new JavaCustomReceiver("",
-						""));
+				.receiverStream(new JavaCustomReceiver("6277689",
+						"d00e2ea50267d6f940a523b6917840eb-09fa1a7a9e47c0435a41b113c744c8bd"));
 
 		JavaDStream<ForexData> fxData = lines
 				.map(new Function<String, ForexData>() {
